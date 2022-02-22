@@ -3,6 +3,7 @@
 > 🚧 **This library is an early work in progress! Breaking changes may be frequent.**
 
 > 🐍 For Python 3.10+
+
 No-boilerplate, async and typed Twitter access. 😋
 
 ```shell
