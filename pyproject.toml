@@ -1,0 +1,36 @@
+[build-system]
+requires = [ "setuptools>=42", "wheel" ]
+build-backend = "setuptools.build_meta"
+
+# [project]
+# name = "SlyTwitter"
+# version = "0.1.0"
+# description = "No-boilerplate, async and typed Twitter access."
+# readme = "README.md"
+# authors = [ { name = "Dunkyl 🔣🔣" } ]
+# long_description = "file: README.md"
+# long_description_content_type = "text/markdown"
+# classifiers = [
+#     "Programming Language :: Python :: 3",
+#     "License :: OSI Approved :: MIT License",
+#     "Operating System :: OS Independent",
+# ]
+
+# [project.urls]
+# homepage = "https://github.com/dunkyl/SlyPyTwitter"
+# bugtracker = "https://github.com/dunkyl/SlyPyTwitter/issues"
+
+# [options]
+# package_dir = "src"
+# python_requires = ">=3.10"
+# install_requires = ["SlyAPI >= 0.1.2"]
+
+# [options.packages.find]
+# where = "src"
+
+# [options.extras_require]
+# dev = ["pytest", "pytest-asyncio"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["test"]
