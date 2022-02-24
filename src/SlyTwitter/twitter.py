@@ -110,8 +110,8 @@ class Media(APIObj['_TwitterUpload']):
             case _:
                 raise TypeError(F"{source} is not a valid source for Media")
 
-    # async def addAltText(self, text: str):
-    #     await self._service.addAltText(self, text)
+    async def add_alt_text(self, text: str):
+        await self._service.add_alt_text(self, text)
 
 class Tweet(APIObj['Twitter']):
     id: int
@@ -140,8 +140,9 @@ class Tweet(APIObj['Twitter']):
     def link(self) -> str:
         return F"https://twitter.com/{self.author_username}/status/{self.id}"
 
-    # async def delete(self):
-    #     await self._service.delete(self)
+    async def delete(self):
+        await self._service.delete(self)
+    
 T_Params = ParamSpec('T_Params')
 R = TypeVar('R')
 S = TypeVar('S')
