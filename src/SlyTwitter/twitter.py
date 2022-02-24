@@ -2,7 +2,7 @@ import re
 from datetime import datetime
 from typing import Any
 from SlyAPI import *
-from SlyAPI.oauth1 import OAuth1, OAuth1Provider
+from SlyAPI.oauth1 import OAuth1
 
 from .twitter_upload import Media, TwitterUpload
 from .common import make_with_self
@@ -136,31 +136,20 @@ def get_tweet_id(tweet: Tweet | int | str) -> int:
         case _:
             raise TypeError(F"{tweet} is not a valid tweet, ID, or URL")
 
-class Twitter(WebAPI, OAuth1Provider):
-
+class Twitter(WebAPI):
     base_url = 'https://api.twitter.com/1.1'
-    REQUEST_AUTH_URL = 'https://api.twitter.com/oauth/request_token'
-    AUTHORIZE_AUTH_URL = 'https://api.twitter.com/oauth/authorize'
-    ACCESS_AUTH_URL = 'https://api.twitter.com/oauth/access_token'
-
     _upload_api: TwitterUpload
     
     def __init__(self, app: OAuth1 | dict[str, str], user: OAuth1User | dict[str, str] | None):
-        match user:
-            case { 'key': key, 'secret': secret}:
-                user = OAuth1User(key, secret)
-            case dict():
-                raise TypeError("Unknown user format for Twitter")
-            case _: pass
+        if isinstance(user, dict):
+            user = OAuth1User(user)
 
-        match app:
-            case OAuth1():
-                auth = app
-                if user: auth.user = user
-            case { 'key': key, 'secret': secret }:
-                auth = OAuth1(key, secret, user)
-            case _:
-                raise TypeError("Unknown auth format for Twitter")
+        if isinstance(app, dict):
+            auth = OAuth1(app, user)
+        else:
+            auth = app
+            auth.user = user
+
         super().__init__(auth)
         self._upload_api = TwitterUpload(auth)
 
@@ -207,6 +196,8 @@ class Twitter(WebAPI, OAuth1Provider):
     async def quote_tweet(self, body: str, quoting: Tweet | str, media: list[Media] | str | tuple[bytes, str] | None = None) -> Tweet:
         if isinstance(quoting, Tweet):
             quoting = quoting.link()
+        if not RE_TWEET_LINK.match(quoting):
+            raise ValueError(F"Not recognized as a valid tweet link for QRT: {quoting}")
         body += ' {quoting}'
         return await self.tweet(body, media)
 

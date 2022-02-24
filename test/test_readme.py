@@ -1,3 +1,4 @@
+import pytest
 import asyncio
 import json
 
@@ -18,6 +19,7 @@ async def test_readme():
 
     print(follow)
 
+@pytest.mark.skip(reason="effectual")
 async def test_upload_tweet_delete():
 
     app = json.load(open('test/app.json'))

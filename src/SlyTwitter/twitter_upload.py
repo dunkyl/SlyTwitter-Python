@@ -102,16 +102,26 @@ class TwitterUpload(WebAPI):
 
     async def upload(self, file_: str | tuple[bytes, str]) -> Media:
 
+        maxsize = 15_000_000 # bytes 
+
         # get the file:
         if hasattr(file_, 'url'):
             file_ = getattr(file_, 'url')
         match file_:
+            
             case str() if m := RE_FILE_URL.match(file_):
-                async with self.session.get(file_) as req:
-                    raw = await req.read()
+                async with self.session.get(file_) as resp:
+                    if resp.content_length is None:
+                        raise ValueError(F"File {file_} did not report its size. Aborting download.")
+                    elif resp.content_length > maxsize:
+                        raise ValueError(F"File is too large to upload ({resp.content_length} bytes)")
+                    raw = await resp.read()
                 ext = m['ext']
             case str() if os.path.isfile(file_):
                 async with aiofiles.open(file_, 'rb') as f:
+                    sz = os.path.getsize(file_)
+                    if sz > maxsize:
+                        raise ValueError(F"File is too large to upload ({sz} bytes)")
                     raw = await f.read()
                 ext = file_.split('.')[-1].lower()
             case (data, ext_):
@@ -123,7 +133,7 @@ class TwitterUpload(WebAPI):
         size = len(raw)
         category = get_media_category(ext, False)
 
-        maxsize = 15_000_000 # bytes 
+        
         if category in ('DmImage', 'TweetImage'):
             maxsize = 5_000_000 # bytes
 
