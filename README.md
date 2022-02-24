@@ -4,7 +4,7 @@
 
 > 🐍 For Python 3.10+
 
-No-boilerplate, async and typed Twitter access. 😋
+## No-boilerplate, _async_ and _typed_ Twitter access. 😋
 
 ```shell
 pip install slytwitter
@@ -34,9 +34,9 @@ async def main():
 
     twitter = await Twitter(app, user)
 
-    tweet = await twitter.tweet('Hello, world!')
+    follow = await twitter.check_follow('dunkyl_', 'TechConnectify')
 
-    print(tweet)
+    print(follow) # @dunkyl_ follows @TechConnectify
     
 asyncio.run(main())
 ```

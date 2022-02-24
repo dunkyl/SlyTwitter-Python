@@ -1,9 +1,8 @@
 import json
 from SlyTwitter import *
-from SlyAPI import OAuth1App, OAuth1User
 
 
-async def test_tweet():
+async def test_readme():
 
     app = json.load(open('test/app.json'))
 
@@ -11,6 +10,7 @@ async def test_tweet():
 
     twitter = await Twitter(app, user)
 
-    tweet = await twitter.tweet('Hello, world!')
+    # tweet = await twitter.tweet('Hello, world!')
+    follow = await twitter.check_follow('dunkyl_', 'TechConnectify')
 
-    print(tweet)
+    print(follow)
