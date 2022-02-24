@@ -204,11 +204,11 @@ class Twitter(WebAPI, OAuth1Provider):
         id = get_tweet_id(tweet)
         await self.post_json(F'statuses/retweet/{id}')
 
-    async def quote_tweet(self, body: str, quoting: Tweet | str) -> Tweet:
+    async def quote_tweet(self, body: str, quoting: Tweet | str, media: list[Media] | str | tuple[bytes, str] | None = None) -> Tweet:
         if isinstance(quoting, Tweet):
             quoting = quoting.link()
         body += ' {quoting}'
-        return await self.tweet(body)
+        return await self.tweet(body, media)
 
     async def upload_media(self, file_: str | tuple[bytes, str]) -> Media:
         """ Upload a new media file to twitter for attaching to tweets.
