@@ -1,32 +1,23 @@
 import pytest
 import asyncio
-import json
 
 import aiohttp
 from SlyTwitter import *
 
-
 async def test_readme():
 
-    app = json.load(open('test/app.json'))
-
-    user = json.load(open('test/user.json'))
-
-    twitter = await Twitter(app, user)
+    twitter = await Twitter('test/app.json', 'test/user.json')
 
     # tweet = await twitter.tweet('Hello, world!')
     follow = await twitter.check_follow('dunkyl_', 'TechConnectify')
 
     print(follow)
+    assert str(follow) == '@dunkyl_ follows @TechConnectify'
 
 @pytest.mark.skip(reason="effectual")
 async def test_upload_tweet_delete():
 
-    app = json.load(open('test/app.json'))
-
-    user = json.load(open('test/user2.json'))
-
-    twitter = await Twitter(app, user)
+    twitter = await Twitter('test/app.json', 'test/user.json')
 
     # post a tweet with an image
 

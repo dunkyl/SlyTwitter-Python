@@ -140,11 +140,11 @@ class Twitter(WebAPI):
     base_url = 'https://api.twitter.com/1.1'
     _upload_api: TwitterUpload
     
-    def __init__(self, app: OAuth1 | dict[str, str], user: OAuth1User | dict[str, str] | None):
-        if isinstance(user, dict):
+    def __init__(self, app: str | OAuth1, user: str | OAuth1User | None):
+        if isinstance(user, str):
             user = OAuth1User(user)
 
-        if isinstance(app, dict):
+        if isinstance(app, str):
             auth = OAuth1(app, user)
         else:
             auth = app

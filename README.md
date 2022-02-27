@@ -1,4 +1,4 @@
-# ![sly logo](https://raw.githubusercontent.com/dunkyl/SlyMeta/main/sly%20logo.svg) SlyTwitter
+# ![sly logo](https://raw.githubusercontent.com/dunkyl/SlyMeta/main/sly%20logo.svg) Sly Twitter for Python
 
 > 🚧 **This library is an early work in progress! Breaking changes may be frequent.**
 
@@ -28,11 +28,8 @@ import asyncio
 from SlyTwitter import *
 
 async def main():
-    # don't forget to keep your secrets secret!
-    app = json.load(open('test/app.json'))
-    user = json.load(open('test/user.json'))
 
-    twitter = await Twitter(app, user)
+    twitter = await Twitter('test/app.json', 'test/user.json')
 
     follow = await twitter.check_follow('dunkyl_', 'TechConnectify')
 
