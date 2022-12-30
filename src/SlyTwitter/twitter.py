@@ -2,7 +2,6 @@ import re
 from datetime import datetime
 from typing import Any
 from SlyAPI import *
-from SlyAPI.oauth1 import OAuth1
 
 from .twitter_upload import Media, TwitterUpload
 from .common import make_with_self
@@ -15,15 +14,17 @@ class User(APIObj['Twitter']):
     id: int
     at: str
     display_name: str
-    description: str
-    location: str
-    website: str
-    is_verified: bool
-    is_private: bool
-    created_at: datetime
-    profile_image: str
 
-    def __init__(self, source: int | str | dict[str, Any], service: 'Twitter'):
+    # hydratable fields
+    description: str|None = None
+    location: str|None = None
+    website: str|None = None
+    is_verified: bool|None = None
+    is_private: bool|None = None
+    created_at: datetime|None = None
+    profile_image: str|None = None
+
+    def __init__(self, source: dict[str, Any], service: 'Twitter'):
         super().__init__(service)
         match source:
             case int():
@@ -36,11 +37,11 @@ class User(APIObj['Twitter']):
                 else:
                     self.at = source
             case { # from user response
-                'id': id,
-                'screen_name': at,
-                'name': display_name,
-                'location': location,
-                'url': website,
+                'id': int(id),
+                'screen_name': str(at),
+                'name': str(display_name),
+                'location': str(location),
+                'url': str(website),
                 **extended
             }:
                 self.id = id
@@ -50,15 +51,15 @@ class User(APIObj['Twitter']):
                 self.website = website
                 if extended:
                     self.description = extended['description']
-                    self.verified = extended['verified']
-                    self.private = extended['protected']
+                    self.is_verified = extended['verified']
+                    self.is_private = extended['protected']
                     self.created_at = datetime.strptime(
                         extended['created_at'], '%a %b %d %H:%M:%S %z %Y')
                     self.profile_image = extended['profile_image_url_https']
             case { # from following response
                 'followed_by': _,
-                'id': id,
-                'screen_name': at,
+                'id': int(id),
+                'screen_name': str(at),
             }:
                 self.id = id
                 self.at = at
@@ -110,12 +111,14 @@ class Tweet(APIObj['Twitter']):
                     raise ValueError('Cannot create Tweet without ID, link to tweet, or dict representation')
                 self.author_username = m['user']
                 self.id = int(m['tweet_id'])
-            case { 'id': id_, 'extended_tweet': { 'full_text': text } }:
+            case { 'id': id_, 'extended_tweet': { 'full_text': text }, 'user': { 'screen_name': user } }:
                 self.id = id_
                 self.body = text
-            case { 'id': id_, 'text': text }:
+                self.author_username = user
+            case { 'id': id_, 'text': text, 'user': { 'screen_name': user } }:
                 self.id = id_
                 self.body = text
+                self.author_username = user
             case _:
                 raise TypeError(F"{source} is not a valid source for Tweet")
 
@@ -136,22 +139,17 @@ def get_tweet_id(tweet: Tweet | int | str) -> int:
         case _:
             raise TypeError(F"{tweet} is not a valid tweet, ID, or URL")
 
+
 class Twitter(WebAPI):
     base_url = 'https://api.twitter.com/1.1'
     _upload_api: TwitterUpload
     
-    def __init__(self, app: str | OAuth1, user: str | OAuth1User | None):
-        if isinstance(user, str):
-            user = OAuth1User(user)
+    async def __init__(self, auth: str | OAuth1User):
+        if isinstance(auth, str):
+            auth = OAuth1User(auth)
 
-        if isinstance(app, str):
-            auth = OAuth1(app, user)
-        else:
-            auth = app
-            auth.user = user
-
-        super().__init__(auth)
-        self._upload_api = TwitterUpload(auth)
+        await super().__init__(auth)
+        self._upload_api = await TwitterUpload(auth)
 
     def get_full_url(self, path: str) -> str:
         return super().get_full_url(path) +'.json'
@@ -170,7 +168,7 @@ class Twitter(WebAPI):
         if media is not None and not isinstance(media, list):
             media = [await self._upload_api.upload(media)]
         if media:
-            data |= { 'media_ids': [m.id for m in media] }
+            data |= { 'media_ids': ','.join(str(m.id) for m in media) }
         return await self.post_json( '/statuses/update',
             data = data
         )
@@ -178,20 +176,20 @@ class Twitter(WebAPI):
     @make_with_self(Following)
     async def check_follow(self, a: User | str, b: User | str):
         """ Get the relationship between two users. """
-        if isinstance(a, str): a = User(a, self)
-        if isinstance(b, str): b = User(b, self)
+        if isinstance(a, User): a = a.at
+        if isinstance(b, User): b = b.at
         return await self.get_json( '/friendships/show', {
-            'source_screen_name': a.at,
-            'target_screen_name': b.at
+            'source_screen_name': a,
+            'target_screen_name': b
         })
 
     async def delete(self, tweet: Tweet | int | str):
         id = get_tweet_id(tweet)
-        await self.post_json(F'statuses/destroy/{id}')
+        await self.post_json(F'/statuses/destroy/{id}')
 
     async def retweet(self, tweet: Tweet | int | str):
         id = get_tweet_id(tweet)
-        await self.post_json(F'statuses/retweet/{id}')
+        await self.post_json(F'/statuses/retweet/{id}')
 
     async def quote_tweet(self, body: str, quoting: Tweet | str, media: list[Media] | str | tuple[bytes, str] | None = None) -> Tweet:
         if isinstance(quoting, Tweet):

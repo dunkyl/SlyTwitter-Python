@@ -17,3 +17,10 @@ def make_with_self(constructor: Callable[[T, S], R]) -> Callable[
             return constructor(result, self)
         return wrapper
     return decorator
+
+class TwitterError(Exception):
+    _obj: object
+
+    def __init__(self, errorobj) -> None:
+        super().__init__()
+        self._obj = errorobj

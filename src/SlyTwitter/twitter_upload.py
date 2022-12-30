@@ -6,25 +6,31 @@ from SlyAPI.oauth1 import OAuth1
 
 import aiofiles
 
-from .common import make_with_self, RE_FILE_URL
+from .common import TwitterError, make_with_self, RE_FILE_URL
 
 IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp']
 VIDEO_EXTENSIONS = ['mp4', 'webm']
 
 MEDIA_TYPES = {
     'mp4': 'video/mp4', 'webm': 'video/webm',
-    'jpg': 'image/jpeg', 'jpeg': 'image/jpeg', 'png': 'image/png', 'gif': 'image/gif'
+    'jpg': 'image/jpeg', 'jpeg': 'image/jpeg', 'png': 'image/png', 'gif': 'image/gif', 'webp': 'image/webp'
 }
-#TODO: webp?
 
-def get_media_category(ext: str, is_DM: bool):
-    if ext not in MEDIA_TYPES:
-        raise ValueError(F'Extension {ext} is not a valid media type')
-    cat2 = MEDIA_TYPES[ext].split('/')[0] if not ext == 'gif' else 'gif'
-    if is_DM:
-        return F"Dm{cat2[0].upper()}{cat2[1:]}"
-    else:
-        return F"Tweet{cat2[0].upper()}{cat2[1:]}"
+def get_upload_info(ext: str, is_dm: bool):
+    prefix = "dm" if is_dm else "tweet"
+    if ext == 'gif':
+        max_size = 15_000_000
+        category = prefix+'_gif'
+    elif ext in IMAGE_EXTENSIONS:
+        max_size = 5_000_000
+        category = prefix+'_image'
+    else: # video:
+        # TODO: this is 512mb for ads, but I can't find the limit for tweet media
+        # https://developer.twitter.com/en/docs/twitter-ads-api/creatives/overview/promoted-video-overview
+        # ^ and this says only 500mb for ads...
+        max_size = 15_000_000
+        category = prefix+'_video'
+    return max_size, category
 
 class Media(APIObj['TwitterUpload']):
     id: int
@@ -46,8 +52,8 @@ class Media(APIObj['TwitterUpload']):
 class TwitterUpload(WebAPI):
     base_url = 'https://upload.twitter.com/1.1/'
 
-    def __init__(self, auth: OAuth1):
-        super().__init__(auth)
+    async def __init__(self, auth: OAuth1User) -> None:
+        await super().__init__(auth)
 
     def get_full_url(self, path: str) -> str:
         return super().get_full_url(path) +'.json'
@@ -101,16 +107,13 @@ class TwitterUpload(WebAPI):
             })
 
     async def upload(self, file_: str | tuple[bytes, str]) -> Media:
-
-        maxsize = 15_000_000 # bytes 
-
         # get the file:
         if hasattr(file_, 'url'):
             file_ = getattr(file_, 'url')
         match file_:
             
             case str() if m := RE_FILE_URL.match(file_):
-                async with self.session.get(file_) as resp:
+                async with self._session.get(file_) as resp:
                     if resp.content_length is None:
                         raise ValueError(F"File {file_} did not report its size. Aborting download.")
                     elif resp.content_length > maxsize:
@@ -131,11 +134,7 @@ class TwitterUpload(WebAPI):
                 raise TypeError(F"{file_} is not a valid bytes object, file path, or URL")
 
         size = len(raw)
-        category = get_media_category(ext, False)
-
-        
-        if category in ('DmImage', 'TweetImage'):
-            maxsize = 5_000_000 # bytes
+        maxsize, category = get_upload_info(ext, False)
 
         if size > maxsize:
             raise ValueError(F"File {file_} is too large to upload ({size/1_000_000} mb > {maxsize/1_000_000} mb).")
@@ -157,17 +156,12 @@ class TwitterUpload(WebAPI):
         
         # finalize upload and wait for twitter to confirm
         status = await self.finalize_upload(media)
-
-        if 'expires_after_secs' in status:
-            pass
-        else:
-
-            while status['state'] not in ['succeeded', 'failed']:
-                await asyncio.sleep(status['check_after_secs'])
-
-                status = await self.check_upload_status(media)
-
-        if status['state'] == 'failed':
-            raise Exception(F"Upload failed: {status['processing_info']['state']}")
+        while 'processing_info' in status and status['processing_info']['state'] != 'succeeded':
+            if status['processing_info']['state'] == 'failed':
+                print('Upload failed:')
+                print(status)
+                raise TwitterError(status)
+            await asyncio.sleep(status['processing_info']['check_after_secs'])
+            status = await self.check_upload_status(media)
 
         return media

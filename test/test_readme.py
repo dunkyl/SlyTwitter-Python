@@ -6,7 +6,7 @@ from SlyTwitter import *
 
 async def test_readme():
 
-    twitter = await Twitter('test/app.json', 'test/user.json')
+    twitter = await Twitter('test/user.json')
 
     # tweet = await twitter.tweet('Hello, world!')
     follow = await twitter.check_follow('dunkyl_', 'TechConnectify')
@@ -17,7 +17,7 @@ async def test_readme():
 @pytest.mark.skip(reason="effectual")
 async def test_upload_tweet_delete():
 
-    twitter = await Twitter('test/app.json', 'test/user.json')
+    twitter = await Twitter('test/user.json')
 
     # post a tweet with an image
 
@@ -27,13 +27,13 @@ async def test_upload_tweet_delete():
 
     print(tweet)
 
-    await asyncio.sleep(1)
+    await asyncio.sleep(10)
 
     # delete it and make sure its gone
 
     await tweet.delete()
 
-    await asyncio.sleep(1)
+    await asyncio.sleep(10)
 
     async with aiohttp.ClientSession() as session:
         async with session.get(tweet.link()) as resp:
