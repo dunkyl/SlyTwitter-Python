@@ -53,33 +53,35 @@ class User:
                 self.id = int(id_)
                 self.at = at
                 self.display_name = display_name
+            case _:
+                raise ValueError(F'Unknown source for User: {source}')
 
     def __str__(self):
         return F'@{self.at}'
 
 
 class TwitterV2(WebAPI):
-    base_url = 'https://api.twitter.com/2'
+    base_url = 'https://api.twitter.com/2/'
     
     def __init__(self, auth: OAuth2):
         super().__init__(auth)
 
     @requires_scopes('users.read')
     async def me(self) -> User:
-        return User((await self.get_json(f'/users/me'))['data'])
+        return User((await self.get_json('users/me'))['data'])
 
     @requires_scopes('users.read')
     async def user(self, at: str|None=None) -> User:
         if at is None:
             return await self.me()
-        return User((await self.get_json(f'/users/by/username/{at}'))['data'])
+        return User((await self.get_json(F'users/by/username/{at}'))['data'])
 
     @requires_scopes('users.read', 'tweet.read', 'follows.read')
     async def all_followers_of(self, user: User) -> AsyncTrans[User]:
         """ Get the list of users following a user."""
-        return self.paginated(F'/users/{user.id}/followers', {}, None).map(User)
+        return self.paginated(F'users/{user.id}/followers', {}, None).map(User)
 
     @requires_scopes('users.read', 'tweet.read', 'follows.read')
     async def all_followed_by(self, user: User) -> AsyncTrans[User]:
         """ Get the list of followed users by a user."""
-        return self.paginated(F'/users/{user.id}/following', {}, None).map(User)
+        return self.paginated(F'users/{user.id}/following', {}, None).map(User)

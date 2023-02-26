@@ -61,7 +61,7 @@ class User:
                 self.id = id
                 self.at = at
             case _:
-                raise TypeError(f'Invalid source type for tweet: {type(source)}')
+                raise TypeError(F'Invalid source type for tweet: {type(source)}')
 
     def __str__(self):
         return F'@{self.at}'
