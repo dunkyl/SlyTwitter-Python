@@ -1,8 +1,8 @@
+from enum import Enum
+from typing import Any
 from SlyAPI import *
 
-from SlyAPI.webapi import Json
-
-class TweetField(EnumParam):
+class TweetField(Enum):
     ATTACHMENTS = 'attachments'
     AUTHOR_ID = 'author_id'
     CONTEXT_ANNOTATIONS = 'context_annotations'
@@ -25,7 +25,7 @@ class TweetField(EnumParam):
     TEXT = 'text'
     WITHHELD = 'withheld'
 
-class UserField(EnumParam):
+class UserField(Enum):
     CREATED_AT = 'created_at'
     DESCRIPTION = 'description'
     ENTITIES = 'entities'
@@ -41,13 +41,12 @@ class UserField(EnumParam):
     VERIFIED = 'verified'
     WITHHELD = 'withheld'
 
-class User(APIObj['TwitterV2']):
+class User:
     id: int # NOTE: represented as a string in the API
     at: str
     display_name: str
 
-    def __init__(self, source: Json, service: 'TwitterV2'):
-        super().__init__(service)
+    def __init__(self, source: Any):
         match source:
             # v2 with default fields
             case { 'id': str(id_), 'username': str(at), 'name': str(display_name) }:
@@ -62,34 +61,25 @@ class User(APIObj['TwitterV2']):
 class TwitterV2(WebAPI):
     base_url = 'https://api.twitter.com/2'
     
-    async def __init__(self, app: str | OAuth2, user: str | OAuth2User | None):
-        if isinstance(user, str):
-            user = OAuth2User(user)
+    def __init__(self, auth: OAuth2):
+        super().__init__(auth)
 
-        if isinstance(app, str):
-            auth = OAuth2(app, user)
-        else:
-            auth = app
-            auth.user = user
-
-        await super().__init__(auth)
+    @requires_scopes('users.read')
+    async def me(self) -> User:
+        return User((await self.get_json(f'/users/me'))['data'])
 
     @requires_scopes('users.read')
     async def user(self, at: str|None=None) -> User:
         if at is None:
-            return User((await self.get_json(f'/users/me'))['data'], self)
-        return User((await self.get_json(f'/users/by/username/{at}'))['data'], self)
+            return await self.me()
+        return User((await self.get_json(f'/users/by/username/{at}'))['data'])
 
     @requires_scopes('users.read', 'tweet.read', 'follows.read')
     async def all_followers_of(self, user: User) -> AsyncTrans[User]:
         """ Get the list of users following a user."""
-        return AsyncTrans(
-            self.paginated(F'/users/{user.id}/followers', {}, None),
-            lambda x: User(x, self))
+        return self.paginated(F'/users/{user.id}/followers', {}, None).map(User)
 
     @requires_scopes('users.read', 'tweet.read', 'follows.read')
     async def all_followed_by(self, user: User) -> AsyncTrans[User]:
         """ Get the list of followed users by a user."""
-        return AsyncTrans(
-            self.paginated(F'/users/{user.id}/following', {}, None),
-            lambda x: User(x, self))
+        return self.paginated(F'/users/{user.id}/following', {}, None).map(User)

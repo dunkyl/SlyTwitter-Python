@@ -1,12 +1,12 @@
 import asyncio, base64, os
 from io import BytesIO
-from typing import Any
+from typing import Any, cast
 from SlyAPI import *
 from SlyAPI.oauth1 import OAuth1
 
 import aiofiles
 
-from .common import TwitterError, make_with_self, RE_FILE_URL
+from .common import TwitterError, RE_FILE_URL
 
 IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp']
 VIDEO_EXTENSIONS = ['mp4', 'webm']
@@ -32,11 +32,10 @@ def get_upload_info(ext: str, is_dm: bool):
         category = prefix+'_video'
     return max_size, category
 
-class Media(APIObj['TwitterUpload']):
+class Media:
     id: int
 
-    def __init__(self, source: int | dict[str, Any], service: 'TwitterUpload'):
-        super().__init__(service)
+    def __init__(self, source: int | dict[str, Any]):
         match source:
             case int():
                 self.id = source
@@ -45,15 +44,12 @@ class Media(APIObj['TwitterUpload']):
             case _:
                 raise TypeError(F"{source} is not a valid source for Media")
 
-    async def add_alt_text(self, text: str):
-        await self._service.add_alt_text(self, text)
-
 
 class TwitterUpload(WebAPI):
     base_url = 'https://upload.twitter.com/1.1/'
 
-    async def __init__(self, auth: OAuth1User) -> None:
-        await super().__init__(auth)
+    def __init__(self, auth: OAuth1) -> None:
+        super().__init__(auth)
 
     def get_full_url(self, path: str) -> str:
         return super().get_full_url(path) +'.json'
@@ -73,18 +69,17 @@ class TwitterUpload(WebAPI):
             }
         )
 
-    @make_with_self(Media)
     async def init_upload(self, type_: str, size: int, category: str):
-        return await self.post_json(
+        return Media(await self.post_form(
             '/media/upload', data = {
                 'command': 'INIT',
                 'media_category': category,
                 'media_type': type_,
                 'total_bytes': str(size),
-        })
+        }))
 
     async def append_upload(self, media: Media, index: int, chunk: bytes):
-        return await self.post_json(
+        return await self.post_form(
             '/media/upload', data = {
                 'command': 'APPEND',
                 'media_id': str(media.id),
@@ -93,14 +88,14 @@ class TwitterUpload(WebAPI):
             })
 
     async def finalize_upload(self, media: Media):
-        return await self.post_json(
+        return await self.post_form(
             '/media/upload', data = {
                 'command': 'FINALIZE',
                 'media_id': str(media.id)
             })
 
     async def check_upload_status(self, media: Media):
-        return await self.get_json(
+        return await self.get_form(
             '/media/upload', data = {
                 'command': 'STATUS',
                 'media_id': str(media.id)
@@ -110,32 +105,39 @@ class TwitterUpload(WebAPI):
         # get the file:
         if hasattr(file_, 'url'):
             file_ = getattr(file_, 'url')
+
         match file_:
-            
             case str() if m := RE_FILE_URL.match(file_):
-                async with self._session.get(file_) as resp:
+                ext = m['ext']
+            case str() if os.path.isfile(file_):
+                ext = file_.split('.')[-1].lower()
+            case (_, ext_):
+                ext = ext_
+            case _:
+                raise TypeError(F"{file_} is not a valid bytes object, file path, or URL")
+            
+        maxsize, category = get_upload_info(ext, False)
+
+        match file_:
+            case str() if m := RE_FILE_URL.match(file_):
+                async with self._client.get(file_) as resp:
                     if resp.content_length is None:
                         raise ValueError(F"File {file_} did not report its size. Aborting download.")
                     elif resp.content_length > maxsize:
                         raise ValueError(F"File is too large to upload ({resp.content_length} bytes)")
                     raw = await resp.read()
-                ext = m['ext']
             case str() if os.path.isfile(file_):
                 async with aiofiles.open(file_, 'rb') as f:
                     sz = os.path.getsize(file_)
                     if sz > maxsize:
                         raise ValueError(F"File is too large to upload ({sz} bytes)")
                     raw = await f.read()
-                ext = file_.split('.')[-1].lower()
-            case (data, ext_):
+            case (data, _):
                 raw = data
-                ext = ext_
-            case _:
-                raise TypeError(F"{file_} is not a valid bytes object, file path, or URL")
+            case _: raise AssertionError("impossible branch")
 
         size = len(raw)
-        maxsize, category = get_upload_info(ext, False)
-
+        
         if size > maxsize:
             raise ValueError(F"File {file_} is too large to upload ({size/1_000_000} mb > {maxsize/1_000_000} mb).")
 
@@ -156,12 +158,20 @@ class TwitterUpload(WebAPI):
         
         # finalize upload and wait for twitter to confirm
         status = await self.finalize_upload(media)
-        while 'processing_info' in status and status['processing_info']['state'] != 'succeeded':
-            if status['processing_info']['state'] == 'failed':
-                print('Upload failed:')
-                print(status)
-                raise TwitterError(status)
-            await asyncio.sleep(status['processing_info']['check_after_secs'])
-            status = await self.check_upload_status(media)
+
+        while True:
+            match status:
+                case { 'processing_info': { # pending
+                        'check_after_secs': int(wait_secs)
+                    } }:
+                    await asyncio.sleep(wait_secs)
+                    status = await self.check_upload_status(media)
+                case { 'processing_info': {
+                        'state': 'failed'
+                    } }:
+                    print('Upload failed:')
+                    print(status)
+                    raise TwitterError(status)
+                case _: break # success
 
         return media
