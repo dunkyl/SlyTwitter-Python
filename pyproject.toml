@@ -1,35 +1,32 @@
+[project]
+name = "SlyAPI"
+version = "0.1.2"
+description = "No-boilerplate, async and typed Twitter access."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file="LICENSE" }
+authors = [{name="Dunkyl 🔣🔣"}]
+classifiers = [
+    "Operating System :: OS Independent"
+]
+dependencies = [
+    'SlyAPI >= 0.2.4',
+    'aiofiles',
+]
+[project.optional-dependencies]
+dev = [
+    'pytest',
+    'pytest-asyncio'
+]
+
+[project.urls]
+Homepage = "https://docs.dunkyl.net/SlyTwitter-Python/"
+Repository = "https://github.com/dunkyl/SlyTwitter-Python"
+Documentation = "https://docs.dunkyl.net/SlyTwitter-Python/"
+"Bug Tracker" = "https://github.com/dunkyl/SlyTwitter-Python/issues"
+
 [build-system]
-requires = [ "setuptools>=42", "wheel" ]
-build-backend = "setuptools.build_meta"
-
-# [project]
-# name = "SlyTwitter"
-# version = "0.1.0"
-# description = "No-boilerplate, async and typed Twitter access."
-# readme = "README.md"
-# authors = [ { name = "Dunkyl 🔣🔣" } ]
-# long_description = "file: README.md"
-# long_description_content_type = "text/markdown"
-# classifiers = [
-#     "Programming Language :: Python :: 3",
-#     "License :: OSI Approved :: MIT License",
-#     "Operating System :: OS Independent",
-# ]
-
-# [project.urls]
-# homepage = "https://github.com/dunkyl/SlyPyTwitter"
-# bugtracker = "https://github.com/dunkyl/SlyPyTwitter/issues"
-
-# [options]
-# package_dir = "src"
-# python_requires = ">=3.10"
-# install_requires = ["SlyAPI >= 0.1.2"]
-
-# [options.packages.find]
-# where = "src"
-
-# [options.extras_require]
-# dev = ["pytest", "pytest-asyncio"]
+requires = ["setuptools", "wheel"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
