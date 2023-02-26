@@ -1,3 +1,6 @@
+'''
+Twitter API v1.1
+'''
 import re
 from datetime import datetime
 from typing import Any
@@ -9,6 +12,8 @@ RE_TWEET_LINK = re.compile(r'https://twitter\.com/(?P<user>[a-z0-9_]+)/status/(?
 RE_USER_LINK = re.compile(r'https://twitter\.com/(?P<user>[a-z0-9_]+)', re.IGNORECASE)
 
 class User:
+    '''Twitter user, can be hydrated from a variety of sources'''
+    # TODO: consider garunteeing that these three are always hydrated
     id: int
     at: str
     display_name: str
@@ -67,9 +72,10 @@ class User:
         return F'@{self.at}'
 
 class Following:
+    '''Following relationship between two users, four possible states'''
     a: User
     b: User
-    is_mutual: bool
+    mutual: bool
     a_follows_b: bool
     b_follows_a: bool
 
@@ -134,7 +140,7 @@ def get_tweet_id(tweet: Tweet | int | str) -> int:
 
 
 class Twitter(WebAPI):
-    '''Twitter V1.1 API'''
+    '''Twitter V1.1 API Client'''
     base_url = 'https://api.twitter.com/1.1'
     _upload_api: TwitterUpload
     

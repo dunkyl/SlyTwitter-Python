@@ -68,10 +68,12 @@ class TwitterV2(WebAPI):
 
     @requires_scopes('users.read')
     async def me(self) -> User:
+        '''The currently authenticated user.'''
         return User((await self.get_json('users/me'))['data'])
 
     @requires_scopes('users.read')
     async def user(self, at: str|None=None) -> User:
+        '''Get a user by their @username.'''
         if at is None:
             return await self.me()
         return User((await self.get_json(F'users/by/username/{at}'))['data'])
