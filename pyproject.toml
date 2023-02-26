@@ -1,5 +1,5 @@
 [project]
-name = "SlyAPI"
+name = "SlyTwitter"
 version = "0.1.2"
 description = "No-boilerplate, async and typed Twitter access."
 readme = "README.md"

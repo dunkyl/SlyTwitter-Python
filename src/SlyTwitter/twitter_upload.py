@@ -1,8 +1,8 @@
 import asyncio, base64, os
 from io import BytesIO
-from typing import Any, cast
 from SlyAPI import *
 from SlyAPI.oauth1 import OAuth1
+from SlyAPI.webapi import JsonMap
 
 import aiofiles
 
@@ -35,11 +35,11 @@ def get_upload_info(ext: str, is_dm: bool):
 class Media:
     id: int
 
-    def __init__(self, source: int | dict[str, Any]):
+    def __init__(self, source: int | JsonMap):
         match source:
             case int():
                 self.id = source
-            case {'media_id': id_}:
+            case {'media_id': int(id_)}:
                 self.id = id_
             case _:
                 raise TypeError(F"{source} is not a valid source for Media")
@@ -60,7 +60,7 @@ class TwitterUpload(WebAPI):
         elif len(text) > 1000:
             raise ValueError("Alt text can't be longer than 1000 characters.")
 
-        return await self.post_json( 'media/metadata/create',
+        await self.post_json_empty( 'media/metadata/create',
             json = {
                 'media_id': str(media.id),
                 'alt_text': {
@@ -71,7 +71,7 @@ class TwitterUpload(WebAPI):
 
     async def init_upload(self, type_: str, size: int, category: str):
         return Media(await self.post_form(
-            '/media/upload', data = {
+            'media/upload', data = {
                 'command': 'INIT',
                 'media_category': category,
                 'media_type': type_,
@@ -79,8 +79,8 @@ class TwitterUpload(WebAPI):
         }))
 
     async def append_upload(self, media: Media, index: int, chunk: bytes):
-        return await self.post_form(
-            '/media/upload', data = {
+        return await self.post_form_empty(
+            'media/upload', data = {
                 'command': 'APPEND',
                 'media_id': str(media.id),
                 'segment_index': str(index),
@@ -89,14 +89,14 @@ class TwitterUpload(WebAPI):
 
     async def finalize_upload(self, media: Media):
         return await self.post_form(
-            '/media/upload', data = {
+            'media/upload', data = {
                 'command': 'FINALIZE',
                 'media_id': str(media.id)
             })
 
     async def check_upload_status(self, media: Media):
         return await self.get_form(
-            '/media/upload', data = {
+            'media/upload', data = {
                 'command': 'STATUS',
                 'media_id': str(media.id)
             })

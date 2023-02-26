@@ -174,14 +174,17 @@ class Twitter(WebAPI):
         }))
 
     async def delete(self, tweet: Tweet | int | str):
+        'Delete a tweet.'
         tweet_id = get_tweet_id(tweet)
         await self.post_json(F'/statuses/destroy/{tweet_id}')
 
     async def retweet(self, tweet: Tweet | int | str):
+        'Retweet a tweet.'
         tweet_id = get_tweet_id(tweet)
         await self.post_json(F'/statuses/retweet/{tweet_id}')
 
     async def quote_tweet(self, body: str, quoting: Tweet | str, media: list[Media] | str | tuple[bytes, str] | None = None) -> Tweet:
+        'Post a tweet quoting another tweet.'
         if isinstance(quoting, Tweet):
             quoting = quoting.link()
         if not RE_TWEET_LINK.match(quoting):
