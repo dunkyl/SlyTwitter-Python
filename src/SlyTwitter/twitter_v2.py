@@ -2,6 +2,11 @@ from enum import Enum
 from typing import Any
 from SlyAPI import *
 
+class Scope:
+    USERS_READ = 'users.read'
+    TWEETS_READ = 'tweets.read'
+    FOLLOWS_READ = 'follows.read'
+
 class TweetField(Enum):
     ATTACHMENTS = 'attachments'
     AUTHOR_ID = 'author_id'

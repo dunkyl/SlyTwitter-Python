@@ -1,6 +1,6 @@
 import sys, asyncio
 
-import aiohttp, pytest
+import pytest #, aiohttp
 
 from SlyTwitter import *
 from SlyTwitter.twitter import OAuth1, OAuth1App, OAuth1User
