@@ -3,11 +3,9 @@ import sys, asyncio
 import pytest #, aiohttp
 
 from SlyTwitter import *
-from SlyTwitter.twitter import OAuth1, OAuth1App, OAuth1User
+from SlyTwitter.twitter import OAuth1
 
-app = OAuth1App.from_json_file('test/sly_test_app.json')
-user = OAuth1User.from_json_file('test/user.json')
-auth = OAuth1(app, user)
+auth = OAuth1('test/sly_test_app.json', 'test/user.json')
 
 # Preconditions:
 # - test was not recenty run (several hours?)

@@ -10,13 +10,20 @@ classifiers = [
     "Operating System :: OS Independent"
 ]
 dependencies = [
-    'SlyAPI >= 0.2.4',
+    'SlyAPI >= 0.4.3',
     'aiofiles',
 ]
 [project.optional-dependencies]
 dev = [
     'pytest',
-    'pytest-asyncio'
+    'pytest-asyncio',
+    
+    # docs
+    'myst-parser',
+    'furo',
+    'sphinxcontrib-trio',
+    'sphinx-copybutton',
+    'sphinxext-opengraph'
 ]
 
 [project.urls]

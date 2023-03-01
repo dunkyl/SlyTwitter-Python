@@ -6,9 +6,7 @@ from SlyTwitter.twitter_v2 import OAuth2, OAuth2App, OAuth2User
 @pytest.mark.skip(reason="Twitter API changes")
 async def test_readme_v2():
 
-    app = OAuth2App.from_json_file('test/twauth2.json')
-    user = OAuth2User.from_json_file('test/user22.json')
-    auth = OAuth2(app, user)
+    auth = OAuth2('test/twauth2.json', 'test/user22.json')
 
     twitter = Twitter(auth)
 
