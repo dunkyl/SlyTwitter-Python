@@ -1,10 +1,12 @@
 # ![sly logo](https://raw.githubusercontent.com/dunkyl/SlyMeta/main/sly%20logo.svg) Sly Twitter for Python
 
+<!-- elevator begin -->
+
 > 🚧 **This library is an early work in progress! Breaking changes may be frequent.**
 
 > 🐍 For Python 3.10+
 
-## No-boilerplate, _async_ and _typed_ Twitter access. 😋
+## No-boilerplate, *async* and *typed* Twitter access. 😋
 
 ```shell
 pip install slytwitter
@@ -24,6 +26,8 @@ V2 may or may not work, due to changes in access policy to Twitter's API. If it 
 
 You can directly grant user tokens using the command line, covering the whole OAuth 1.0 grant process.
 
+<!-- elevator end -->
+
 ---
 
 Example usage:
@@ -34,7 +38,8 @@ from SlyTwitter import *
 
 async def main():
 
-    twitter = await Twitter('test/app.json', 'test/user.json')
+    auth = OAuth1('test/app.json', 'test/user.json')
+    twitter = Twitter(auth)
 
     tweet = await twitter.tweet('Hello, world!')
     follow = await twitter.check_follow('dunkyl_', 'TechConnectify')
@@ -44,3 +49,15 @@ async def main():
     
 asyncio.run(main())
 ```
+
+---
+
+Example CLI usage for getting authorized:
+
+```sh
+py -m SlyTwitter v1 scaffold
+# ...
+py -m SlyTwitter v1 grant
+```
+
+Granting credentials requires a Twitter developer account and credentials from their website. Visit [Twitter developers](https://developer.twitter.com/en/portal/dashboard) to get started.

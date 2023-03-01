@@ -153,13 +153,12 @@ class Twitter(WebAPI):
         return super().get_full_url(path) +'.json'
 
     async def tweet(self, body: str, media: list[Media] | str | tuple[bytes, str] | None = None):
-        """
-            Post a tweet.
+        """ Post a tweet.
             Media can be:
-              - a file path
-              - a URL
-              - some media already uploaded
-              - a bytes-like obj a tupled with a file extension
+            - a file path
+            - a URL
+            - some media already uploaded
+            - a bytes-like obj a tupled with a file extension
         """
         data = { 'status': body }
         if media is not None and not isinstance(media, list):
@@ -201,9 +200,9 @@ class Twitter(WebAPI):
     async def upload_media(self, file_: str | tuple[bytes, str]) -> Media:
         """ Upload a new media file to twitter for attaching to tweets.
             File can be:
-              - a file path
-              - a URL
-              - a bytes-like obj a tupled with a file extension
+            - a file path
+            - a URL
+            - a bytes-like obj a tupled with a file extension
         """
         return await self._upload_api.upload(file_)
     

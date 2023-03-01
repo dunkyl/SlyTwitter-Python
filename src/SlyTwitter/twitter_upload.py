@@ -1,3 +1,6 @@
+'''
+Twitter API v1.1 for uploading media
+'''
 import asyncio, base64, os
 from io import BytesIO
 from SlyAPI import *
