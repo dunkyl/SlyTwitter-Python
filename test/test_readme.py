@@ -3,7 +3,6 @@ import sys, asyncio
 import pytest #, aiohttp
 
 from SlyTwitter import *
-from SlyTwitter.twitter import OAuth1
 
 auth = OAuth1('test/sly_test_app.json', 'test/user.json')
 

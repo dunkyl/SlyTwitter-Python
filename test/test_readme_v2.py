@@ -1,7 +1,6 @@
 import pytest
 
-from SlyTwitter.twitter_v2 import TwitterV2 as Twitter
-from SlyTwitter.twitter_v2 import OAuth2, OAuth2App, OAuth2User
+from SlyTwitter import TwitterV2 as Twitter, OAuth2
 
 @pytest.mark.skip(reason="Twitter API changes")
 async def test_readme_v2():

@@ -122,7 +122,7 @@ class TwitterUpload(WebAPI):
         maxsize, category = get_upload_info(ext, False)
 
         match file_:
-            case str() if m := RE_FILE_URL.match(file_):
+            case str() if RE_FILE_URL.match(file_):
                 async with self._client.get(file_) as resp:
                     if resp.content_length is None:
                         raise ValueError(F"File {file_} did not report its size. Aborting download.")
